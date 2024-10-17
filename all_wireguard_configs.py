@@ -13,7 +13,7 @@ try:
     import requests
 except:
     print("installing packages : tqdm requests")
-    subprocess.run("pip install tqdm requests", text=True, shell=True, capture_output=True)
+    subprocess.run("pip install --trusted-host https://pypi.tuna.tsinghua.edu.cn/simple/ tqdm requests", text=True, shell=True, capture_output=True)
     from tqdm import tqdm
     import requests
 
