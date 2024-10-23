@@ -21,6 +21,7 @@ class Warp():
     
     def __init__(self):
         self.init_settings()
+        self.starting_print_and_inputs()
         self.check_platform()
         self.download_wgcf()
         self.download_warpendpoint()
@@ -50,9 +51,31 @@ class Warp():
         self.ip_range_path = "./ip_range.txt"
         self.ip_list_path = "./ip.txt"
         self.wgcf_profile_path = "./wgcf-profile.conf"
-        self.minimum_config = 10
+        self.minimum_config = 2
         self.zero_packet_loss_ips= []
         self.wireguard_configs = []
+        self.ip_version4 = True         # alternative 6
+  
+    def starting_print_and_inputs(self):
+        os.system('cls||clear')
+        self.print(".:| Hiddify Warp config generator by Jelingam |:.", color = "blue")
+        print("\n")
+        id_width = 4
+        text_width = 20
+        ip_width = 6
+        total_width = id_width + text_width + ip_width
+        self.print("| " + "-"*total_width + " |" , color = "red")
+        self.print(["| ", "[1]", "Hiddify > 2.0 Warp ", "IPV4",  " |"], pad = [2, id_width, text_width, ip_width, 2], color = ["red", "purple", "cyan", "green", "red"])
+        self.print(["| ", "[2]", "Hiddify > 2.0 Warp ", "IPV6",  " |"], pad = [2, id_width, text_width, ip_width, 2], color = ["red", "purple", "cyan", "green", "red"])
+        self.print("| " + "-"*total_width + " |" , color = "red")
+        ipv = input("Enter your choice: ")
+        if ipv == "4":
+            self.ip_version4 = True
+        elif ipv == "6":
+            self.ip_version4 = False
+        else:
+            self.print("please enter valid choice", color = "red")
+            sys.exit()
         
     def run_command(self, command: str):
         return subprocess.run(command, text=True, shell=True, capture_output=True)
@@ -65,17 +88,40 @@ class Warp():
         if not self.check_bash_help_is_available("tar", "Usage: tar"):
             self.run_command("apt install tar")
 
-    def print(self, text:str, color:str = "white"):
-        if color == "white":
-            print(text)
-        elif color == "red":
-            print("\033[91m{}\033[00m".format(text))
-        elif color == "green":
-            print("\033[92m{}\033[00m".format(text))
-        elif color == "yellow":
-            print("\033[93m{}\033[00m".format(text))
-        elif color == "cyan":
-            print("\033[96m{}\033[00m".format(text))
+    def print(self, text: str | list, pad: list = [], color: str|list = "white"):
+        colors = {
+                "red" : '\033[0;31m',
+                "green" : '\033[0;32m',
+                "yellow" : '\033[0;33m',
+                "blue" : '\033[0;34m',
+                "purple" : '\033[0;35m',
+                "cyan" : '\033[0;36m',
+                'white' : '\033[0m'
+                }
+
+        if isinstance(text, str) and isinstance(color, str):
+            if color not in colors.keys():
+                print(f"wrong Color = {color}")
+                return
+            text = self.truncate_and_pad(text, pad) if pad else text
+            print(f"{colors[color]}{text}")
+        
+        if isinstance(text, list) and isinstance(color, list):
+            for c in color:
+                if c not in colors.keys():
+                    print(f"wrong Color = {c}")
+                    return
+            if len(text) != len(color):
+                print("please specify color for each text segment")
+                return
+            if pad != [] and (len(color) != len(pad) or len(text) != len(pad)):
+                print("please specify color and pad for each text segment")
+                return
+            message = ""
+            for t, c, p in zip(text, color, pad):
+                _t = self.truncate_and_pad(t, p) if pad else t
+                message += f"{colors[c]}{_t}"
+            print(message)
 
     def remove_file(self, path:str = "" , pattern:str = ""):
         if os.path.isfile(path):
@@ -358,7 +404,8 @@ class Warp():
             max_retry -= 1
         
         if max_retry == 0 or len(self.zero_packet_loss_ips) < self.minimum_config:
-            self.print(f"Sorry! we cant find at least {self.minimum_config} config for you")
+            self.print(f"Sorry! we cant find at least {self.minimum_config} clean IP for you in defined ip range", color = "red")
+            self.print(f"consider to turn you VPN off and provide another Cloudflare ip range in 'ip_range.txt file'", color = "red")
             sys.exit(0)
                 
         # self.run_command("clear")
@@ -445,7 +492,7 @@ class Warp():
                 print("We can't register an account on Cloudflare; this problem happens because of these two issues:")
                 print("1. Turn on VPN: Please consider this tool can't be run with VPN turned on.")
                 print("2. According to issue #356 on ViRb3/wgcf: on some android devieces 'wgcf' may not working.")
-                print("for solving this problem you can build this file from source")
+                print("for solving this problem you can build this file from source.")
                 option = input("Do you want build wgcf from source  (y/n):")
                 if option == "n":
                     sys.exit()
@@ -465,9 +512,23 @@ class Warp():
             return None, None    
 
     def build_wgcf_from_source(self):
-        pass
-        # TODO complete this part
-
+        print("installing golang & wget")
+        self.run_command("pkg install golang wget")
+        
+        print("download source file of wgcf")
+        version = "2.2.22"
+        self.run_command(f"wget https://github.com/ViRb3/wgcf/archive/refs/tags/v{version}.tar.gz")
+        
+        print("building wgcf. it takes about 5 min. don't worry, This process needs to be done once.")
+        self.run_command(f"tar xzf v{version}.tar.gz")
+        self.run_command(f"rm v{version}.tar.gz")
+        self.run_command(f"cd wgcf-{version}")
+        self.run_command("go build")
+        self.run_command("cd .. && cp wgcf-{version}/wgcf ./")
+        self.run_command(f"rm -rf wgcf-{version}")
+        self.chmod_file(self.wgcf_path)
+        self.generate_keys_offline()
+        
     def generate_wiregurd_configs(self, online: bool = False):
         
         if online:
@@ -540,7 +601,7 @@ class WireguardConfig:
             "server": ip,
             "server_port": int(port),
             "peer_public_key": public_key,
-            "mtu": noise.get("mtu") if noise.get("mtu") else 1306,
+            "mtu": noise.get("mtu") if noise.get("mtu") else 1280,
             "fake_packets": noise.get("fake_packets") if noise.get("fake_packets") else "40-80",
             "fake_packets_size": noise.get("fake_packets_size") if noise.get("fake_packets_size") else "40-100",
             "fake_packets_delay": noise.get("fake_packets_delay") if noise.get("fake_packets_delay") else "5-10",
