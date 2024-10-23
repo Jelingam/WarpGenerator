@@ -1,0 +1,6 @@
+HiddifyCli
+hiddify_config.json
+result.csv
+Wireguard_configs_*
+tmp/
+ip.txt
