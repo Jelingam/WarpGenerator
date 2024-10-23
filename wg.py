@@ -22,13 +22,16 @@ class Warp():
     def __init__(self):
         self.init_settings()
         self.starting_print_and_inputs()
+        if not self.ip_version4:
+            self.print("Under Development, comming up in the next version just in few days ...", color = "red")
+            sys.exit(0)
         self.check_platform()
         self.download_wgcf()
         self.download_warpendpoint()
         # self.download_hiddifycli()
-        # self.create_random_ip_list(count = 500)
-        self.test_endpoints()
+        self.test_endpoints_ipv4()
         self.generate_wiregurd_configs()
+        
         if self.cpu in ["arm64", "armv7"]:
             self.copy_configs_to_device()
 
@@ -58,20 +61,24 @@ class Warp():
   
     def starting_print_and_inputs(self):
         os.system('cls||clear')
-        self.print(".:| Hiddify Warp config generator by Jelingam |:.", color = "blue")
+        self.print(".:| Hiddify Warp config generator by Jelingam |:.", color = "red")
         print("\n")
-        id_width = 4
+        id_width = 7
         text_width = 20
         ip_width = 6
-        total_width = id_width + text_width + ip_width
-        self.print("| " + "-"*total_width + " |" , color = "red")
-        self.print(["| ", "[1]", "Hiddify > 2.0 Warp ", "IPV4",  " |"], pad = [2, id_width, text_width, ip_width, 2], color = ["red", "purple", "cyan", "green", "red"])
-        self.print(["| ", "[2]", "Hiddify > 2.0 Warp ", "IPV6",  " |"], pad = [2, id_width, text_width, ip_width, 2], color = ["red", "purple", "cyan", "green", "red"])
-        self.print("| " + "-"*total_width + " |" , color = "red")
+        total_width = id_width + text_width + ip_width + 8
+        table_color = "white"
+        self.print("|" + "-"*total_width + "|" , color = table_color)
+        self.print(["| ", "ID", " | ", "Item", " | ",  "IPVer",  " |"], pad = [2, id_width, 3, text_width, 3, ip_width, 2], color = [table_color, "purple", table_color, "cyan", table_color, "yellow", table_color])        
+        self.print("|" + "-"*total_width + "|" , color = table_color)
+        self.print(["| ", "[1]", " | ", "Hiddify Warp v > 2", " | ",  "ipV4",  " |"], pad = [2, id_width, 3, text_width, 3, ip_width, 2], color = [table_color, "purple", table_color, "cyan", table_color, "yellow", table_color])
+        self.print(["| ", "[2]", " | ", "Hiddify Warp v > 2", " | ",  "ipV6",  " |"], pad = [2, id_width, 3, text_width, 3, ip_width, 2], color = [table_color, "purple", table_color, "cyan", table_color, "yellow", table_color])        
+        self.print("|" + "-"*total_width + "|" , color = table_color)
+        print("\n ")
         ipv = input("Enter your choice: ")
-        if ipv == "4":
+        if ipv == "1":
             self.ip_version4 = True
-        elif ipv == "6":
+        elif ipv == "2":
             self.ip_version4 = False
         else:
             self.print("please enter valid choice", color = "red")
@@ -214,7 +221,7 @@ class Warp():
             self.download(warpendpoint_url, self.warpendpoint_path)
             self.chmod_file(self.warpendpoint_path)
             if self.check_file_is_executable(self.warpendpoint_path) and self.check_bash_help_is_available(self.warpendpoint_path, "Usage of"):
-                self.print("warpendpoint downloaded successfuly", "green")
+                self.print("warpendpoint downloaded successfuly", color = "green")
                 return True
             else:
                 return False
@@ -287,7 +294,7 @@ class Warp():
                 size = file.write(data)
                 bar.update(size)
 
-    def validate_ip(self, ip: str):
+    def validate_ipv4(self, ip: str):
         striped_ip = ip.strip()
         is_ok = False
         if striped_ip.count(".") == 3:
@@ -301,13 +308,13 @@ class Warp():
                         break
         return is_ok, striped_ip
 
-    def validate_ip_range(self, ip_range: str):
+    def validate_ipv4_range(self, ip_range: str):
         striped_ip_range = ip_range.strip()
         is_ok = False
         try:
             if striped_ip_range.count(".") == 3 and "/" in striped_ip_range:
                 [ip0, end_range] = striped_ip_range.split("/")
-                ok, ip0 = self.validate_ip(ip0)
+                ok, ip0 = self.validate_ipv4(ip0)
                 if ok:
                     start_range = ip0.split(".")[-1]
                     if start_range.isdigit() and end_range.isdigit():
@@ -319,7 +326,7 @@ class Warp():
             print(f"ip range {striped_ip_range} is not valid")
         return is_ok, striped_ip_range
 
-    def create_random_ips_from_ip_range(self, ip_range: str, count: int = 5):
+    def create_random_ips_from_ipv4_range(self, ip_range: str, count: int = 5):
         start_ip, end_range = ip_range.split("/")[0].split("."), int(ip_range.split("/")[1])
         ips = []
         start_range = int(start_ip[-1])
@@ -331,23 +338,23 @@ class Warp():
                     ips.append(ip)
         return ips
         
-    def create_random_ips_from_ip_ranges(self, ip_ranges: str, count: int = 100):
+    def create_random_ips_from_ipv4_ranges(self, ip_ranges: str, count: int = 100):
         validate_ip_ranges = []
         unique_ips = []
         for _ip_range in ip_ranges:
-            ok, ip_range = self.validate_ip_range(_ip_range)
+            ok, ip_range = self.validate_ipv4_range(_ip_range)
             if ok:
                 validate_ip_ranges.append(ip_range)
         all_ips = []
         while len(unique_ips) < count:
             for ip_range in validate_ip_ranges:
-                ips = self.create_random_ips_from_ip_range(ip_range)
+                ips = self.create_random_ips_from_ipv4_range(ip_range)
                 for ip in ips:
                     all_ips.append(ip)
                 unique_ips = list(set(all_ips))
         return unique_ips    
 
-    def create_random_ip_list(self, from_ip_range_file: bool = False, count: int = 100):
+    def create_random_ipv4_list(self, from_ip_range_file: bool = False, count: int = 100):
         defult_ip_ranges = ["162.159.192.0/255", "162.159.193.0/255", "162.159.195.0/255", "188.114.96.0/255",
                             "188.114.97.0/255", "188.114.98.0/255", "188.114.99.0/255"]
         all_ips = []
@@ -356,15 +363,15 @@ class Warp():
             if os.path.isfile(self.ip_range_path):
                 with open(self.ip_range_path) as f:
                     ip_ranges = f.readlines()
-                all_ips = self.create_random_ips_from_ip_ranges(ip_ranges, count)
+                all_ips = self.create_random_ips_from_ipv4_ranges(ip_ranges, count)
                 
                 # if ip ranges define in ip_range.txt is not enough
                 if len(all_ips) < count:
-                    random_ips = self.create_random_ips_from_ip_ranges(defult_ip_ranges, count - len(all_ips) + 1)
+                    random_ips = self.create_random_ips_from_ipv4_ranges(defult_ip_ranges, count - len(all_ips) + 1)
                     for ip in random_ips:
                         all_ips.append(ip)
         else:
-            all_ips = self.create_random_ips_from_ip_ranges(defult_ip_ranges, count)
+            all_ips = self.create_random_ips_from_ipv4_ranges(defult_ip_ranges, count)
 
         if len(all_ips) > count:
             while len(all_ips) != count:
@@ -384,10 +391,10 @@ class Warp():
         string = string or ""
         return (string[:length-3] + '...').ljust(length) if len(string) > length else string.ljust(length)
     
-    def test_endpoints(self):
+    def test_endpoints_ipv4(self):
         max_retry = 5
         while True and max_retry > 0:
-            if self.create_random_ip_list():
+            if self.create_random_ipv4_list():
                 self.run_command_print(self.warpendpoint_path)
                 if os.path.isfile(self.warpendpoint_result_path):
                     with open(self.warpendpoint_result_path, "rt", encoding='utf-8') as file:
@@ -410,7 +417,7 @@ class Warp():
                 
         # self.run_command("clear")
         os.system('cls||clear')
-        id_width = 3
+        id_width = 4
         ip_width = 16
         port_width = 5
         ping_width = 5
