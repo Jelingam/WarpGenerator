@@ -1,6 +1,9 @@
-HiddifyCli
-hiddify_config.json
-result.csv
-Wireguard_configs_*
-tmp/
-ip.txt
+./HiddifyCli
+./hiddify_config.json
+./result.csv
+./Wireguard_configs_*
+./tmp/
+./ip.txt
+./wgcf*
+./warpendpoint
+
