@@ -23,18 +23,18 @@ class Warp():
     
     def __init__(self):
         self.init_settings()
-        # self.starting_print_and_inputs()
-        # if not self.ip_version4:
-        #     self.print("Under Development, comming up in the next version just in few days ...", color = "red")
-        #     sys.exit(0)
-        # self.check_platform()
-        # self.download_wgcf()
-        # self.download_warpendpoint()
-        # self.test_endpoints_ipv4()
-        # self.generate_wiregurd_configs()
+        self.starting_print_and_inputs()
+        if not self.ip_version4:
+            self.print("Under Development, comming up in the next version just in few days ...", color = "red")
+            sys.exit(0)
+        self.check_platform()
+        self.download_wgcf()
+        self.download_warpendpoint()
+        self.test_endpoints()
+        self.generate_wiregurd_configs()
         
-        # if self.cpu in ["arm64", "armv7"]:
-        #     self.copy_configs_to_device()
+        if self.cpu in ["arm64", "armv7"]:
+            self.copy_configs_to_device()
         pass
     
     def init_settings(self):
@@ -438,7 +438,7 @@ class Warp():
             except:
                 return False
 
-    def test_endpoints_ipv4(self):
+    def test_endpoints(self):
         max_retry = 5
         while True and max_retry > 0:
             if self.create_random_ip_list():
