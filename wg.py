@@ -7,6 +7,8 @@ import sys
 import time
 import random
 import datetime
+import re
+import ipaddress
 
 try:
     from tqdm import tqdm
@@ -21,20 +23,20 @@ class Warp():
     
     def __init__(self):
         self.init_settings()
-        self.starting_print_and_inputs()
-        if not self.ip_version4:
-            self.print("Under Development, comming up in the next version just in few days ...", color = "red")
-            sys.exit(0)
-        self.check_platform()
-        self.download_wgcf()
-        self.download_warpendpoint()
-        # self.download_hiddifycli()
-        self.test_endpoints_ipv4()
-        self.generate_wiregurd_configs()
+        # self.starting_print_and_inputs()
+        # if not self.ip_version4:
+        #     self.print("Under Development, comming up in the next version just in few days ...", color = "red")
+        #     sys.exit(0)
+        # self.check_platform()
+        # self.download_wgcf()
+        # self.download_warpendpoint()
+        # self.test_endpoints_ipv4()
+        # self.generate_wiregurd_configs()
         
-        if self.cpu in ["arm64", "armv7"]:
-            self.copy_configs_to_device()
-
+        # if self.cpu in ["arm64", "armv7"]:
+        #     self.copy_configs_to_device()
+        pass
+    
     def init_settings(self):
         self.noine_options = {
         "mtu" : [1306],
@@ -51,7 +53,8 @@ class Warp():
         self.warpendpoint_result_path = "./result.csv"
         self.current_config_path = "./current_config.json"
         self.hiddify_app_settings = "./hiddify_app_settings.json"
-        self.ip_range_path = "./ip_range.txt"
+        self.ipv4_range_path = "./ipv4_range.txt"
+        self.ipv6_range_path = "./ipv6_range.txt"
         self.ip_list_path = "./ip.txt"
         self.wgcf_profile_path = "./wgcf-profile.conf"
         self.minimum_config = 2
@@ -266,11 +269,17 @@ class Warp():
                 return False
         return False
 
-    def read_endpint_result(self):
-        if os.path.isfile(self.result_path):
-            with open(self.result_path, "rt", encoding='utf-8') as file:
-                reader = csv.reader(file)
-                self.result = list(reader)
+    def read_endpoint_result(self):
+        if os.path.isfile(self.warpendpoint_result_path):
+            try:
+                with open(self.warpendpoint_result_path, "rt", encoding='utf-8') as file:
+                    reader = csv.reader(file)
+                    self.result = list(reader)
+                    self.result.pop(0)
+                    return True
+            except:
+                return False
+        return False
 
     def create_new_wgcf_profile(self):
         # self.remove_file(pattern = "wgcf-")
@@ -354,60 +363,99 @@ class Warp():
                 unique_ips = list(set(all_ips))
         return unique_ips    
 
-    def create_random_ipv4_list(self, from_ip_range_file: bool = False, count: int = 100):
-        defult_ip_ranges = ["162.159.192.0/255", "162.159.193.0/255", "162.159.195.0/255", "188.114.96.0/255",
-                            "188.114.97.0/255", "188.114.98.0/255", "188.114.99.0/255"]
-        all_ips = []
-        
-        if from_ip_range_file:
-            if os.path.isfile(self.ip_range_path):
-                with open(self.ip_range_path) as f:
-                    ip_ranges = f.readlines()
-                all_ips = self.create_random_ips_from_ipv4_ranges(ip_ranges, count)
-                
-                # if ip ranges define in ip_range.txt is not enough
-                if len(all_ips) < count:
-                    random_ips = self.create_random_ips_from_ipv4_ranges(defult_ip_ranges, count - len(all_ips) + 1)
-                    for ip in random_ips:
-                        all_ips.append(ip)
-        else:
-            all_ips = self.create_random_ips_from_ipv4_ranges(defult_ip_ranges, count)
-
-        if len(all_ips) > count:
-            while len(all_ips) != count:
-                all_ips.pop(random.randint(0, len(all_ips) - 1))
-            with open(self.ip_list_path, "w") as f:
-                for i, ip in enumerate(all_ips):
-                    if i == len(all_ips) - 1:
-                        f.write(f"{ip}")
-                    else:
-                        f.write(f"{ip}\n")
-            return True
-        else:
-            print(f"can't create {count} ips")
-            return False
-
     def truncate_and_pad(self, string, length):
         string = string or ""
         return (string[:length-3] + '...').ljust(length) if len(string) > length else string.ljust(length)
-    
+
+    def random_ipv6_addr(network):
+        """
+        Generate a random IPv6 address in the given network
+        Example: random_ipv6_addr("fd66:6cbb:8c10::/48")
+        Returns an IPv6Address object.
+        """
+        net = ipaddress.IPv6Network(network)
+        # Which of the network.num_addresses we want to select?
+        addr_no = random.randint(0, net.num_addresses)
+        # Create the random address by converting to a 128-bit integer, adding addr_no and converting back
+        network_int = int.from_bytes(net.network_address.packed, byteorder="big")
+        addr_int = network_int + addr_no
+        addr = ipaddress.IPv6Address(addr_int.to_bytes(16, byteorder="big"))
+        return addr
+
+    def download_ipv6_range(self):
+        url = "https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/ipv6_range.txt"
+        self.download(url, self.ipv6_range_path)
+
+    def create_random_ip_list(self, from_ip_range_file: bool = False, count: int = 100):
+        if self.ip_version4:
+            defult_ip_ranges = ["162.159.192.0/255", "162.159.193.0/255", "162.159.195.0/255", "188.114.96.0/255",
+                                "188.114.97.0/255", "188.114.98.0/255", "188.114.99.0/255"]
+            all_ips = []
+            
+            if from_ip_range_file:
+                if os.path.isfile(self.ipv4_range_path):
+                    with open(self.ipv4_range_path) as f:
+                        ip_ranges = f.readlines()
+                    all_ips = self.create_random_ips_from_ipv4_ranges(ip_ranges, count)
+                    
+                    # if ip ranges define in ip_range.txt is not enough
+                    if len(all_ips) < count:
+                        random_ips = self.create_random_ips_from_ipv4_ranges(defult_ip_ranges, count - len(all_ips) + 1)
+                        for ip in random_ips:
+                            all_ips.append(ip)
+            else:
+                all_ips = self.create_random_ips_from_ipv4_ranges(defult_ip_ranges, count)
+
+            if len(all_ips) > count:
+                while len(all_ips) != count:
+                    all_ips.pop(random.randint(0, len(all_ips) - 1))
+                with open(self.ip_list_path, "w") as f:
+                    for i, ip in enumerate(all_ips):
+                        if i == len(all_ips) - 1:
+                            f.write(f"{ip}")
+                        else:
+                            f.write(f"{ip}\n")
+                return True
+            else:
+                print(f"can't create {count} ips")
+                return False
+        else:
+            try:
+                self.download_ipv6_range()
+                with open(self.ipv6_range_path) as f:
+                    ip_ranges = f.readlines()
+                ipv6 = []
+                while len(ipv6) < count:
+                    for network in ip_ranges:
+                        for i in range(5):
+                            ipv6.append(self.random_ipv6_addr(network))
+                with open(self.ip_list_path, "w") as f:
+                    for i, ip in enumerate(ipv6):
+                        if i == len(ipv6) - 1:
+                            f.write(f"{ip}")
+                        else:
+                            f.write(f"{ip}\n")
+            except:
+                return False
+
     def test_endpoints_ipv4(self):
         max_retry = 5
         while True and max_retry > 0:
-            if self.create_random_ipv4_list():
+            if self.create_random_ip_list():
                 self.run_command_print(self.warpendpoint_path)
-                if os.path.isfile(self.warpendpoint_result_path):
-                    with open(self.warpendpoint_result_path, "rt", encoding='utf-8') as file:
-                        reader = csv.reader(file)
-                        data = list(reader)
-                    for row in data:
+                if self.read_endpoint_result():
+                    for row in self.result:
                         if self.zero_packet_loss(row):
-                            ip = row[0].split(":")[0].strip()
-                            port = row[0].split(":")[1].strip()
-                            ping = row[-1].strip().split(" ")[0]
+                            if self.ip_version4:
+                                ip = row[0].split(":")[0].strip()
+                                port = row[0].split(":")[1].strip()
+                            else:
+                                ip = row[0].split("[")[1].split("]")[0]
+                                port = row[0].split("]")[1].split(":")[-1]
+                            ping = row[-1].strip().split()[0]
                             self.zero_packet_loss_ips.append([ip , port, ping])
-                    if len(self.zero_packet_loss_ips) >= self.minimum_config:
-                        break
+                if len(self.zero_packet_loss_ips) >= self.minimum_config:
+                    break
             max_retry -= 1
         
         if max_retry == 0 or len(self.zero_packet_loss_ips) < self.minimum_config:
@@ -418,7 +466,10 @@ class Warp():
         # self.run_command("clear")
         os.system('cls||clear')
         id_width = 4
-        ip_width = 16
+        if self.ip_version4:
+            ip_width = 16
+        else:
+            ip_width = 36
         port_width = 5
         ping_width = 5
         total_width = id_width + ip_width + port_width + ping_width + 9
