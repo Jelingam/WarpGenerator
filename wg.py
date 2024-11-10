@@ -24,9 +24,9 @@ class Warp():
     def __init__(self):
         self.init_settings()
         self.starting_print_and_inputs()
-        if not self.ip_version4:
-            self.print("Under Development, comming up in the next version just in few days ...", color = "red")
-            sys.exit(0)
+        # if not self.ip_version4:
+        #     self.print("Under Development, comming up in the next version just in few days ...", color = "red")
+        #     sys.exit(0)
         self.check_platform()
         self.download_wgcf()
         self.download_warpendpoint()
