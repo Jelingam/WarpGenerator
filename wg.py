@@ -380,6 +380,7 @@ class Warp():
         network_int = int.from_bytes(net.network_address.packed, byteorder="big")
         addr_int = network_int + addr_no
         addr = ipaddress.IPv6Address(addr_int.to_bytes(16, byteorder="big"))
+        print(addr)
         return addr
 
     def download_ipv6_range(self):
