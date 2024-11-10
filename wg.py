@@ -380,16 +380,13 @@ class Warp():
         network_int = int.from_bytes(net.network_address.packed, byteorder="big")
         addr_int = network_int + addr_no
         addr = ipaddress.IPv6Address(addr_int.to_bytes(16, byteorder="big"))
-        print(addr)
         return addr
-
-
 
     def download_ipv6_range(self):
         url = "https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/ipv6_range.txt"
         self.download(url, self.ipv6_range_path)
 
-    def create_random_ip_list(self, from_ip_range_file: bool = False, count: int = 100):
+    def create_random_ip_list(self, from_ip_range_file: bool = False, count: int = 200):
         if self.ip_version4:
             defult_ip_ranges = ["162.159.192.0/255", "162.159.193.0/255", "162.159.195.0/255", "188.114.96.0/255",
                                 "188.114.97.0/255", "188.114.98.0/255", "188.114.99.0/255"]
@@ -441,25 +438,32 @@ class Warp():
                                 f.write(f"[{ip}]")
                             else:
                                 f.write(f"[{ip}]\n")
+                    return True
                 except Exception as e:
                     print(e)
                     return False
             else:
-                ipv6 = []
-                for i in range(count // 2 + 1):
-                    ipv60 = f"2606:4700:d0::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}"
-                    ipv61 = f"2606:4700:d1::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}"
-                    ipv6.append(ipv60)
-                    ipv6.append(ipv61)
-                    with open(self.ip_list_path, "w") as f:
-                        for i, ip in enumerate(ipv6):
-                            if i == len(ipv6) - 1:
-                                f.write(f"[{ip}]")
-                            else:
-                                f.write(f"[{ip}]\n")
+                try:
+                    ipv6 = []
+                    for i in range(count // 2 + 1):
+                        ipv60 = f"2606:4700:d0::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}"
+                        ipv61 = f"2606:4700:d1::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}"
+                        ipv6.append(ipv60)
+                        ipv6.append(ipv61)
+                        with open(self.ip_list_path, "w") as f:
+                            for i, ip in enumerate(ipv6):
+                                if i == len(ipv6) - 1:
+                                    f.write(f"[{ip}]")
+                                else:
+                                    f.write(f"[{ip}]\n")
+                    return True
+                except Exception as e:
+                    print(e)
+                    return False
+    
     def test_endpoints(self):
-        max_retry = 5
-        while True and max_retry > 0:
+        max_retry = 1
+        while max_retry > 0:
             if self.create_random_ip_list():
                 self.run_command_print(self.warpendpoint_path)
                 if self.read_endpoint_result():
@@ -477,7 +481,7 @@ class Warp():
                     break
             max_retry -= 1
         
-        if max_retry == 0 or len(self.zero_packet_loss_ips) < self.minimum_config:
+        if len(self.zero_packet_loss_ips) < self.minimum_config:
             self.print(f"Sorry! we cant find at least {self.minimum_config} clean IP for you in defined ip range", color = "red")
             self.print(f"consider to turn you VPN off and provide another Cloudflare ip range in 'ip_range.txt file'", color = "red")
             sys.exit(0)
