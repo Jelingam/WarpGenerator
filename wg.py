@@ -91,7 +91,7 @@ class Warp():
         return subprocess.run(command, text=True, shell=True, capture_output=True)
 
     def run_command_print(self, cmd):
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True, shell= True) as p:
             proc = p.communicate()
 
     def install_libraries(self):
