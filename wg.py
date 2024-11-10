@@ -429,7 +429,7 @@ class Warp():
                 while len(ipv6) < count:
                     for network in ip_ranges:
                         for i in range(5):
-                            ipv6.append(self.random_ipv6_addr(network))
+                            ipv6.append(self.random_ipv6_addr(network.strip()))
                 with open(self.ip_list_path, "w") as f:
                     for i, ip in enumerate(ipv6):
                         if i == len(ipv6) - 1:
