@@ -5,7 +5,7 @@ import subprocess
 import platform
 import sys
 import time
-import random
+from random import randint
 import datetime
 import re
 import ipaddress
@@ -341,7 +341,7 @@ class Warp():
         start_range = int(start_ip[-1])
         if end_range - start_range > count:
             while len(ips) != count:
-                rand = random.randint(start_range, end_range)
+                rand = randint(start_range, end_range)
                 ip = f"{start_ip[0]}.{start_ip[1]}.{start_ip[2]}.{rand}"
                 if ip not in ips:
                     ips.append(ip)
@@ -375,13 +375,15 @@ class Warp():
         """
         net = ipaddress.IPv6Network(network)
         # Which of the network.num_addresses we want to select?
-        addr_no = random.randint(0, net.num_addresses)
+        addr_no = randint(0, net.num_addresses)
         # Create the random address by converting to a 128-bit integer, adding addr_no and converting back
         network_int = int.from_bytes(net.network_address.packed, byteorder="big")
         addr_int = network_int + addr_no
         addr = ipaddress.IPv6Address(addr_int.to_bytes(16, byteorder="big"))
         print(addr)
         return addr
+
+
 
     def download_ipv6_range(self):
         url = "https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/ipv6_range.txt"
@@ -409,7 +411,7 @@ class Warp():
 
             if len(all_ips) > count:
                 while len(all_ips) != count:
-                    all_ips.pop(random.randint(0, len(all_ips) - 1))
+                    all_ips.pop(randint(0, len(all_ips) - 1))
                 with open(self.ip_list_path, "w") as f:
                     for i, ip in enumerate(all_ips):
                         if i == len(all_ips) - 1:
@@ -420,26 +422,41 @@ class Warp():
             else:
                 print(f"can't create {count} ips")
                 return False
+        
         else:
-            try:
-                self.download_ipv6_range()
-                with open(self.ipv6_range_path) as f:
-                    ip_ranges = f.readlines()
-                ipv6 = []
-                while len(ipv6) < count:
-                    for network in ip_ranges:
-                        for i in range(5):
-                            ipv6.append(self.random_ipv6_addr(network.strip()))
-                with open(self.ip_list_path, "w") as f:
-                    for i, ip in enumerate(ipv6):
-                        if i == len(ipv6) - 1:
-                            f.write(f"[{ip}]")
-                        else:
-                            f.write(f"[{ip}]\n")
-            except Exception as e:
-                print(e)
-                return False
 
+            if from_ip_range_file:
+                try:
+                    self.download_ipv6_range()
+                    with open(self.ipv6_range_path) as f:
+                        ip_ranges = f.readlines()
+                    ipv6 = []
+                    while len(ipv6) < count:
+                        for network in ip_ranges:
+                            for i in range(5):
+                                ipv6.append(self.random_ipv6_addr(network.strip()))
+                    with open(self.ip_list_path, "w") as f:
+                        for i, ip in enumerate(ipv6):
+                            if i == len(ipv6) - 1:
+                                f.write(f"[{ip}]")
+                            else:
+                                f.write(f"[{ip}]\n")
+                except Exception as e:
+                    print(e)
+                    return False
+            else:
+                ipv6 = []
+                for i in range(count / 2) + 1:
+                    ipv60 = f"[2606:4700:d0::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}]"
+                    ipv61 = f"[2606:4700:d1::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}]"
+                    ipv6.append(ipv60)
+                    ipv6.append(ipv61)
+                    with open(self.ip_list_path, "w") as f:
+                        for i, ip in enumerate(ipv6):
+                            if i == len(ipv6) - 1:
+                                f.write(f"[{ip}]")
+                            else:
+                                f.write(f"[{ip}]\n")
     def test_endpoints(self):
         max_retry = 5
         while True and max_retry > 0:
