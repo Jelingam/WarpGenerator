@@ -447,8 +447,8 @@ class Warp():
             else:
                 ipv6 = []
                 for i in range(count // 2 + 1):
-                    ipv60 = f"[2606:4700:d0::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}]"
-                    ipv61 = f"[2606:4700:d1::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}]"
+                    ipv60 = f"2606:4700:d0::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}"
+                    ipv61 = f"2606:4700:d1::{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}:{'%x' % randint(10, 65000)}"
                     ipv6.append(ipv60)
                     ipv6.append(ipv61)
                     with open(self.ip_list_path, "w") as f:
