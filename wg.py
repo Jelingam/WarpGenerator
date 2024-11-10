@@ -83,6 +83,7 @@ class Warp():
             self.ip_version4 = True
         elif ipv == "2":
             self.ip_version4 = False
+            print("you select ipv6")
         else:
             self.print("please enter valid choice", color = "red")
             sys.exit()
