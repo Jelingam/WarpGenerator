@@ -347,7 +347,7 @@ class Warp():
                     ips.append(ip)
         return ips
         
-    def create_random_ips_from_ipv4_ranges(self, ip_ranges: str, count: int = 100):
+    def create_random_ips_from_ipv4_ranges(self, ip_ranges: str, count: int = 200):
         validate_ip_ranges = []
         unique_ips = []
         for _ip_range in ip_ranges:
@@ -465,7 +465,7 @@ class Warp():
         max_retry = 1
         while max_retry > 0:
             if self.create_random_ip_list():
-                self.run_command_print(self.warpendpoint_path)
+                self.run_command_print(f"{self.warpendpoint_path} -max 200")
                 if self.read_endpoint_result():
                     for row in self.result:
                         if self.zero_packet_loss(row):
@@ -610,7 +610,7 @@ class Warp():
         self.chmod_file(self.wgcf_path)
         self.generate_keys_offline()
         
-    def generate_wiregurd_configs(self, online: bool = False):
+    def generate_wiregurd_configs(self, online: bool = False, count: int = 50):
         
         if online:
             public_key, private_key = self.generate_keys_online()
@@ -630,6 +630,8 @@ class Warp():
             [ip, port, _] = row
             w = WireguardConfig(f"W{i+1}", ip, port, public_key, private_key)
             self.wireguard_configs.append(w.config)
+            if i > count:
+                break
         
         outbounds = {"outbounds": []}
         for item in self.wireguard_configs:
