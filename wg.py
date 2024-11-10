@@ -433,9 +433,9 @@ class Warp():
                 with open(self.ip_list_path, "w") as f:
                     for i, ip in enumerate(ipv6):
                         if i == len(ipv6) - 1:
-                            f.write(f"{ip}")
+                            f.write(f"[{ip}]")
                         else:
-                            f.write(f"{ip}\n")
+                            f.write(f"[{ip}]\n")
             except Exception as e:
                 print(e)
                 return False
