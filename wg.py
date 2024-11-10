@@ -367,7 +367,7 @@ class Warp():
         string = string or ""
         return (string[:length-3] + '...').ljust(length) if len(string) > length else string.ljust(length)
 
-    def random_ipv6_addr(network):
+    def random_ipv6_addr(self, network):
         """
         Generate a random IPv6 address in the given network
         Example: random_ipv6_addr("fd66:6cbb:8c10::/48")
