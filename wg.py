@@ -465,7 +465,7 @@ class Warp():
         max_retry = 1
         while max_retry > 0:
             if self.create_random_ip_list():
-                self.run_command_print(f"{self.warpendpoint_path} -max 200")
+                self.run_command_print([self.warpendpoint_path, "-max",  "200"])
                 if self.read_endpoint_result():
                     for row in self.result:
                         if self.zero_packet_loss(row):
