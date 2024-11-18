@@ -5,7 +5,7 @@ import subprocess
 import platform
 import sys
 import time
-from random import randint
+from random import randint, choice
 import datetime
 import re
 import ipaddress
@@ -34,8 +34,8 @@ class Warp():
         self.generate_wiregurd_configs()
         
         if self.cpu in ["arm64", "armv7"]:
+            self.create_detour_configs()
             self.copy_configs_to_device()
-        pass
     
     def init_settings(self):
         self.noine_options = {
@@ -55,12 +55,14 @@ class Warp():
         self.hiddify_app_settings = "./hiddify_app_settings.json"
         self.ipv4_range_path = "./ipv4_range.txt"
         self.ipv6_range_path = "./ipv6_range.txt"
+        self.shadowsocks_configs_path = "shadowsocks.json"
         self.ip_list_path = "./ip.txt"
         self.wgcf_profile_path = "./wgcf-profile.conf"
         self.minimum_config = 2
         self.zero_packet_loss_ips= []
         self.wireguard_configs = []
         self.ip_version4 = True         # alternative 6
+        self.create_detour = False
   
     def starting_print_and_inputs(self):
         os.system('cls||clear')
@@ -386,10 +388,14 @@ class Warp():
         url = "https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/ipv6_range.txt"
         self.download(url, self.ipv6_range_path)
 
+    def download_ipv4_range(self):
+        url = "https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/ipv4_range.txt"
+        self.download(url, self.ipv4_range_path)
+
     def create_random_ip_list(self, from_ip_range_file: bool = False, count: int = 200):
         if self.ip_version4:
-            defult_ip_ranges = ["162.159.192.0/255", "162.159.193.0/255", "162.159.195.0/255", "188.114.96.0/255",
-                                "188.114.97.0/255", "188.114.98.0/255", "188.114.99.0/255"]
+            defult_ip_ranges = ["162.159.192.0/255", "162.159.193.0/255", "162.159.195.0/255", "162.159.204.0/255"
+                                "188.114.96.0/255", "188.114.97.0/255", "188.114.98.0/255", "188.114.99.0/255"]
             all_ips = []
             
             if from_ip_range_file:
@@ -633,16 +639,49 @@ class Warp():
             if i > count:
                 break
         
-        outbounds = {"outbounds": []}
+        self.outbounds = {"outbounds": []}
         for item in self.wireguard_configs:
-            outbounds["outbounds"].append(item)
+            self.outbounds["outbounds"].append(item)
         now = datetime.datetime.now().strftime("%Y.%m.%d-%H.%M.%S")
-        self.output_configs_path = f"./Wireguard_configs_{now}.txt"
-        with open (self.output_configs_path, "w") as file:
-            file.write("//profile-title: jelingam Scanner Warps\n")
-            json.dump(outbounds, file, indent = 2)
-        self.print(f"{len(self.zero_packet_loss_ips)} wireguard configs generated for hiddify in {self.output_configs_path}", color = "green")
-        
+        self.output_wireguard_path = f"./Wireguard_configs_{now}.txt"
+        with open (self.output_wireguard_path, "w") as file:
+            file.write("//profile-title: jelingam Warp Scanner\n")
+            json.dump(self.outbounds, file, indent = 2)
+        self.print(f"{len(self.zero_packet_loss_ips)} wireguard configs generated for hiddify in {self.output_wireguard_path}", color = "green")
+
+    def create_detour_configs(self):
+        create_detour = input("do you want create a detour from this warp configs? (y/n)")
+        if create_detour == "y":
+            self.create_detour = True
+        else:
+            return
+        count = input("Max allowable config for warp is 50, how many warp config do you want to use in detour (suggestion=5)?")
+        try:
+            count = int(count)
+        except:
+            self.print("Enter a digit number and try again", color="red")
+            self.create_detour_configs()
+        now = datetime.datetime.now().strftime("%Y.%m.%d-%H.%M.%S")
+        self.output_detour_path = f"./Wireguard_detours_{now}.txt"
+        self.download("https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/shadowsocks.json", self.shadowsocks_configs_path)
+        with open (self.shadowsocks_configs_path) as file:
+            shadowsocks = json.load(file)
+        self.detour_outbounds = {"outbounds": []}
+        # shadowsocks_random_choices_tag = []
+        for i in range(count):
+            self.detour_outbounds["outbounds"].append(self.outbounds["outbounds"][i])
+            warp_tag = self.outbounds["outbounds"][i]["tag"]
+            sh_random_coice = choice(shadowsocks["outbounds"])
+            # sh_random_tag = sh_random_coice["tag"]
+            # shadowsocks_random_choices_tag.append(sh_random_tag)          # TODO check shadowsocks config selected twice in random choice
+            self.detour_outbounds["outbounds"].append(sh_random_coice)
+
+    
+        with open (self.output_detour_path, "w") as file:
+            file.write("//profile-title: jelingam Warp Scanner\n")
+            json.dump(self.detour_outbounds, file, indent = 2)
+        self.print(f"{count} wireguard configs and {count} shadowsocks detour generated for hiddify in {self.output_detour_path}", color = "green")
+
     def copy_configs_to_device(self):
         storage_access_granted = False
         res = self.run_command("ls /storage/emulated/0/")
@@ -657,8 +696,10 @@ class Warp():
         #     out, err = res.stdout, res.stderr
         #     print(f"out = {out}")
         if storage_access_granted:
-            self.run_command(f"cp {self.output_configs_path} /storage/emulated/0/")
-            print(f"you can find this file in your android storage device")
+            self.run_command(f"cp {self.output_wireguard_path} /storage/emulated/0/")
+            if self.create_detour:
+                self.run_command(f"cp {self.output_detour_path} /storage/emulated/0/")
+            print(f"you can find this files in your android storage device")
 
     def generate_random_noise(self, count, fixed_noises: dict = {}):
         mtu_options = fixed_noises.get("mtu") if fixed_noises.get("mtu") else self.noine_options["mtu"]
@@ -670,7 +711,8 @@ class Warp():
         # while len(random_noises) < count:
         
         # TODO complete this function, create a random option from availabe and user select options
-      
+
+
 class WireguardConfig:
     def __init__(self, tag: str , ip: str, port: str | int, public_key: str, private_key: str, noise: dict = {}):       
         self.config = {
