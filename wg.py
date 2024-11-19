@@ -666,11 +666,12 @@ class Warp():
         self.download("https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/shadowsocks.json", self.shadowsocks_configs_path)
         with open (self.shadowsocks_configs_path) as file:
             shadowsocks = json.load(file)
+        l1, l2 = 1000
         if count > len(shadowsocks["outbounds"]):
             l1 = len(shadowsocks["outbounds"])
         if count > len(self.outbounds["outbounds"]):
             l2 = len(self.outbounds["outbounds"])
-        count = min(l1, l2)
+        count = min(l1, l2, count)
         self.detour_outbounds = {"outbounds": []}
         shadowsocks_random_coices = choices(shadowsocks["outbounds"], k = count)
         for i in range(count):
