@@ -5,7 +5,7 @@ import subprocess
 import platform
 import sys
 import time
-from random import randint, choice
+from random import randint, choices
 import datetime
 import re
 import ipaddress
@@ -666,16 +666,18 @@ class Warp():
         self.download("https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/shadowsocks.json", self.shadowsocks_configs_path)
         with open (self.shadowsocks_configs_path) as file:
             shadowsocks = json.load(file)
+        if count > len(shadowsocks["outbounds"]):
+            l1 = len(shadowsocks["outbounds"])
+        if count > len(self.outbounds["outbounds"]):
+            l2 = len(self.outbounds["outbounds"])
+        count = min(l1, l2)
         self.detour_outbounds = {"outbounds": []}
-        # shadowsocks_random_choices_tag = []
+        shadowsocks_random_coices = choices(shadowsocks["outbounds"], k = count)
         for i in range(count):
             self.detour_outbounds["outbounds"].append(self.outbounds["outbounds"][i])
             warp_tag = self.outbounds["outbounds"][i]["tag"]
-            sh_random_coice = choice(shadowsocks["outbounds"])
-            sh_random_coice["detour"] = warp_tag
-            # sh_random_tag = sh_random_coice["tag"]
-            # shadowsocks_random_choices_tag.append(sh_random_tag)          # TODO check shadowsocks config selected twice in random choice
-            self.detour_outbounds["outbounds"].append(sh_random_coice)
+            shadowsocks_random_coices[i]["detour"] = warp_tag
+            self.detour_outbounds["outbounds"].append(shadowsocks_random_coices[i])
 
     
         with open (self.output_detour_path, "w") as file:
