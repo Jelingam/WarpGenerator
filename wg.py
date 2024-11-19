@@ -678,6 +678,10 @@ class Warp():
             self.detour_outbounds["outbounds"].append(self.outbounds["outbounds"][i])
             warp_tag = self.outbounds["outbounds"][i]["tag"]
             shadowsocks_random_coices[i]["detour"] = warp_tag
+            try:
+                shadowsocks_random_coices[i]["tag"] = shadowsocks_random_coices[i]["tag"].split()[-3].strip()
+            except:
+                pass
             self.detour_outbounds["outbounds"].append(shadowsocks_random_coices[i])
 
     
