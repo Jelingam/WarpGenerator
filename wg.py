@@ -647,7 +647,7 @@ class Warp():
         with open (self.output_wireguard_path, "w") as file:
             file.write("//profile-title: jelingam Warp Scanner\n")
             json.dump(self.outbounds, file, indent = 2)
-        self.print(f"{len(self.zero_packet_loss_ips)} wireguard configs generated for hiddify in {self.output_wireguard_path}", color = "green")
+        self.print(f"{len(self.zero_packet_loss_ips)} wireguard configs generated for hiddify in {self.output_wireguard_path}", color = "cyan")
 
     def create_detour_configs(self):
         create_detour = input("do you want create a detour from this warp configs? (y/n)")
@@ -672,6 +672,7 @@ class Warp():
             self.detour_outbounds["outbounds"].append(self.outbounds["outbounds"][i])
             warp_tag = self.outbounds["outbounds"][i]["tag"]
             sh_random_coice = choice(shadowsocks["outbounds"])
+            sh_random_coice["detour"] = warp_tag
             # sh_random_tag = sh_random_coice["tag"]
             # shadowsocks_random_choices_tag.append(sh_random_tag)          # TODO check shadowsocks config selected twice in random choice
             self.detour_outbounds["outbounds"].append(sh_random_coice)
@@ -680,7 +681,7 @@ class Warp():
         with open (self.output_detour_path, "w") as file:
             file.write("//profile-title: jelingam Warp Scanner\n")
             json.dump(self.detour_outbounds, file, indent = 2)
-        self.print(f"{count} wireguard configs and {count} shadowsocks detour generated for hiddify in {self.output_detour_path}", color = "green")
+        self.print(f"{count} wireguard configs and {count} shadowsocks detour generated for hiddify in {self.output_detour_path}", color = "cyan")
 
     def copy_configs_to_device(self):
         storage_access_granted = False
