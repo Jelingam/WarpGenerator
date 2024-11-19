@@ -666,7 +666,7 @@ class Warp():
         self.download("https://raw.githubusercontent.com/Jelingam/WarpGenerator/refs/heads/main/utils/shadowsocks.json", self.shadowsocks_configs_path)
         with open (self.shadowsocks_configs_path) as file:
             shadowsocks = json.load(file)
-        l1, l2 = 1000
+        l1, l2 = 1000, 1000
         if count > len(shadowsocks["outbounds"]):
             l1 = len(shadowsocks["outbounds"])
         if count > len(self.outbounds["outbounds"]):
